@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>try { const t = localStorage.getItem('webxr-classes:theme'); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
+  <title>The Impact of Tourism</title>
+  <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+  <meta name="description" content="A Spanish lesson in virtual reality: walk through a town and find out what tourism does to it.">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="overlay">
+    <span class="eyebrow" data-subject="art">Spanish · Virtual Reality</span>
+    <h1>The Impact of Tourism</h1>
+    <p>Walk through a town and find its four blue buttons. Each one shows what tourism can do to a place, in English and Spanish. Then match the words in the Knowledge Check and at the whiteboard.</p>
+    <div class="buttons">
+      <button id="btn-ar" disabled>Checking for VR…</button>
+      <button id="btn-vr" class="secondary" hidden>Enter VR</button>
+    </div>
+    <p class="hint" id="hint"></p>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

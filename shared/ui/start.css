@@ -1,0 +1,152 @@
+/* The start screen every lesson shares: the same light, academic look as the lessons page, with its dark mode.
+   Each lesson's style.css imports this file. The theme choice is shared with the lessons page (localStorage). */
+:root {
+  color-scheme: light;
+  --bg: #f6f5f1;
+  --bg-2: #ecebe5;
+  --surface: #ffffff;
+  --ink: #15171c;
+  --ink-2: #4a4f5c;
+  --ink-3: #7a8090;
+  --line: rgba(21, 23, 28, 0.1);
+  --line-2: rgba(21, 23, 28, 0.18);
+  --brand: #2f4bd8;
+  --card: rgba(255, 255, 255, 0.92);
+  --shadow: 0 2px 6px rgba(10, 14, 30, 0.12), 0 22px 60px rgba(10, 14, 30, 0.28);
+  --chemistry: #b45309;
+  --physics: #be185d;
+  --biology: #047857;
+  --art: #a21caf;
+  --computing: #1d4ed8;
+  --museum: #7c3aed;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", "Noto Serif", Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1015;
+  --bg-2: #1b1f2a;
+  --surface: #171a23;
+  --ink: #eef0f5;
+  --ink-2: #b7bdcc;
+  --ink-3: #8a91a3;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-2: rgba(255, 255, 255, 0.16);
+  --brand: #8ea2ff;
+  --card: rgba(20, 23, 32, 0.9);
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 22px 60px rgba(0, 0, 0, 0.5);
+  --chemistry: #f5a524;
+  --physics: #f472b6;
+  --biology: #34d399;
+  --art: #e879f9;
+  --computing: #7aa2ff;
+  --museum: #c4a1ff;
+}
+
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1020; font-family: var(--sans); color: var(--ink); }
+canvas { display: block; touch-action: none; }
+
+#overlay {
+  position: fixed; top: 16px; left: 16px; z-index: 2;
+  width: min(400px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow: auto;
+  padding: 14px 18px 18px; border-radius: 20px; box-sizing: border-box;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--line-2); box-shadow: var(--shadow);
+  backdrop-filter: saturate(1.3) blur(16px); -webkit-backdrop-filter: saturate(1.3) blur(16px);
+  -webkit-font-smoothing: antialiased;
+}
+body.in-xr #overlay { display: none; }
+@keyframes overlay-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+#overlay { animation: overlay-in 0.45s ease-out both; }
+
+/* "Preparing the Lesson": a thin bar under the start buttons (shared/fx/Loading.js) */
+.loadbar { margin: 12px 0 0; transition: opacity 0.6s ease 0.8s; }
+.loadbar .track { height: 4px; border-radius: 4px; background: var(--bg-2); overflow: hidden; }
+.loadbar .track span { display: block; height: 100%; width: 8%; border-radius: 4px; background: var(--brand); transition: width 0.4s ease; }
+.loadbar small { display: block; margin-top: 6px; font-size: 12.5px; color: var(--ink-3); }
+.loadbar.busy .track span { width: 32%; animation: loadbar-glide 1.3s ease-in-out infinite; }
+@keyframes loadbar-glide { from { transform: translateX(-100%); } to { transform: translateX(320%); } }
+.loadbar.done { opacity: 0; }
+.loadbar.done .track span { background: var(--good, #34d399); }
+#overlay.mini .loadbar { display: none; }
+@media (prefers-reduced-motion: reduce) { #overlay { animation: none; } .loadbar, .loadbar .track span { transition: none; } .loadbar.busy .track span { animation: none; width: 100%; opacity: 0.5; } }
+
+/* top row: back to the lessons, theme, fold away */
+.start-top { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; }
+.start-top .back-link { margin-right: auto; color: var(--ink-2); font-size: 14px; font-weight: 600; text-decoration: none; }
+.start-top .back-link:hover { color: var(--ink); }
+.start-top .icon {
+  width: 32px; height: 32px; padding: 0; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line-2);
+}
+.start-top .icon:hover { border-color: var(--ink-3); }
+.start-top .icon svg { width: 16px; height: 16px; }
+.start-top .moon, :root[data-theme="dark"] .start-top .sun { display: none; }
+:root[data-theme="dark"] .start-top .moon { display: block; }
+
+#overlay .shot { margin: 0 0 14px; border-radius: 14px; overflow: hidden; aspect-ratio: 16 / 9; background: var(--bg-2); border: 1px solid var(--line); }
+#overlay .shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+#overlay .eyebrow {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0 0 4px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent, var(--ink-3));
+}
+#overlay .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+#overlay .eyebrow[data-subject="chemistry"] { --accent: var(--chemistry); }
+#overlay .eyebrow[data-subject="physics"] { --accent: var(--physics); }
+#overlay .eyebrow[data-subject="biology"] { --accent: var(--biology); }
+#overlay .eyebrow[data-subject="computing"] { --accent: var(--computing); }
+#overlay .eyebrow[data-subject="museum"] { --accent: var(--museum); }
+#overlay .eyebrow[data-subject="art"] { --accent: var(--art); }
+
+#overlay h1 { margin: 0 0 8px; font: 500 30px/1.1 var(--serif); letter-spacing: -0.01em; color: var(--ink); }
+#overlay p { margin: 0 0 14px; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+#overlay .hint { margin: 12px 0 0; font-size: 13px; color: var(--ink-3); }
+#overlay a { color: var(--brand); }
+
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: 600 15px var(--sans); padding: 11px 18px; border-radius: 999px; cursor: pointer;
+  background: var(--ink); color: var(--bg); border: 1px solid var(--ink);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+button:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(10, 14, 30, 0.18); }
+button.secondary { background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+/* no headset here: the hint says so, and exploring on screen becomes the way in */
+#overlay .unavailable { display: none; }
+.buttons:has(.unavailable) #btn-screen { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button:disabled { background: var(--bg-2); color: var(--ink-3); border-color: transparent; cursor: default; }
+
+/* shared sessions */
+.session-box { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.session-box p { margin: 0 0 10px; }
+.session-box .code { font: 700 17px ui-monospace, Menlo, monospace; letter-spacing: 0.12em; color: var(--ink); background: var(--bg-2); padding: 2px 8px; border-radius: 6px; }
+.session-box input:not([type="checkbox"]) {
+  font: 600 15px ui-monospace, Menlo, monospace; text-transform: uppercase; letter-spacing: 0.1em; width: 7em;
+  padding: 10px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink);
+}
+.session-box input:not([type="checkbox"]):focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+.session-box .label { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 6px; }
+.session-box .join-label { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); }
+.session-box .note { font-size: 14px; color: var(--ink-2); }
+.session-box .bigcode { font: 800 44px ui-monospace, Menlo, monospace; letter-spacing: 0.22em; color: var(--ink); background: var(--bg-2); border-radius: 12px; padding: 6px 0 6px 0.22em; text-align: center; margin: 0 0 12px; }
+.session-box .steps { margin: 0 0 10px; padding-left: 20px; font-size: 14px; color: var(--ink-2); }
+.session-box .steps li { margin-bottom: 4px; }
+.session-box .who { font-size: 14px; font-weight: 600; color: var(--brand); }
+button.link { background: none; border: 0; padding: 0; color: var(--brand); text-decoration: underline; font: inherit; box-shadow: none; transform: none; }
+.same-room { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
+.same-room input { width: 16px; height: 16px; margin: 0; accent-color: var(--brand); }
+
+/* folded away: just the title and the way in */
+#overlay.mini { padding: 10px 14px 12px; }
+#overlay.mini .shot, #overlay.mini > p, #overlay.mini .session-box, #overlay.mini #btn-screen { display: none; }
+#overlay.mini .start-top { margin-bottom: 6px; }
+#overlay.mini h1 { font-size: 22px; margin-bottom: 8px; }
+#overlay.mini .credits { display: block; margin-top: 8px; }
+
+@media (max-width: 560px), (max-height: 620px) {
+  #overlay { top: 10px; left: 10px; width: calc(100vw - 20px); max-height: calc(100vh - 20px); padding: 12px 14px 14px; }
+  #overlay .shot { aspect-ratio: 21 / 9; }
+  #overlay h1 { font-size: 25px; }
+}
+@media (prefers-reduced-motion: reduce) { button { transition: none; } }
