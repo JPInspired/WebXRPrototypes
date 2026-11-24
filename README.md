@@ -4,11 +4,24 @@ Lessons being tried out before they join the WebXR Library. They run in the brow
 
 | Lesson | Subject | Path |
 | --- | --- | --- |
-| **The Impact of Tourism** | Spanish (virtual reality) | [`lessons/tourism-vr/`](lessons/tourism-vr/) |
+| **The Impact of Tourism** | Spanish, KS4–5 (virtual reality) | [`lessons/tourism-vr/`](lessons/tourism-vr/) |
 
 ## The Impact of Tourism
 
-Inspired's own ENGAGE lesson "Inspired - Spanish - The Impact of Tourism", rebuilt as a full-size virtual reality lesson.
+*Requested by King's InterHigh.* Inspired's own ENGAGE lesson "Inspired - Spanish - The Impact of Tourism", rebuilt as a full-size virtual reality lesson.
+
+### Lesson plan → what is in the lesson
+
+| Plan | In the lesson |
+| --- | --- |
+| Starter: vocabulary recall | A card with the prompt, on every headset (Teacher menu → Lesson plan) |
+| Main 1: explore the city and press the buttons | The four Effects of Tourism buttons |
+| Main 2: match Spanish and English, a star for each | The Knowledge Check (letters A to D) |
+| Main 3: baskets, sort the vocabulary in pairs | Four baskets (nature, city, positive impacts, negative impacts) and twelve cards |
+| Plenary: share one positive and one negative impact | A card with the prompt |
+| Plenary: "¿Crees que el turismo es más beneficioso o más perjudicial? ¿Por qué?" | A card with the question |
+
+The objectives also mention role-play; the plan does not say what it is, so nothing was made for it.
 
 ### What is the same
 
@@ -20,9 +33,10 @@ Inspired's own ENGAGE lesson "Inspired - Spanish - The Impact of Tourism", rebui
 
 ### What is different
 
-- **Scenery and models are new**, all made in code. The town's shape was worked out from where the lesson's objects stood; it is not a copy of the "Inspired - French Town" scene. People, cars, animals and the rest are stand-ins at life size.
+- **Scenery and models are new**, all made in code. The town follows a screen recording of the original (the church, the cinema with the graffiti wall, the stadium, the flats, the market hall, the red and teal building) and the places where the lesson's objects stood. Nothing was taken from the "Inspired - French Town" scene itself, so shapes and distances are estimates; the north and south streets and the park were not in the recording. People, cars, animals and the rest are stand-ins at life size.
 - **Pictures:** they were on ENGAGE's servers. Placeholders hang where they were. To put one back, save it in `lessons/tourism-vr/pictures/` and name it in `PICTURES` in `src/data/place.js`.
 - **The whiteboard's sentences:** their picture was lost. Six of the eight Spanish phrases were recovered from the snapshot "SpanishTourismQuizShared"; the names of the other two were cut short. **The English was written again and needs a teacher's check.** In the newer of the two lesson files found, the picture appeared late; here the sentences are there from the start.
+- **The baskets:** the plan's snapshot was not found. Seven cards use the original's Spanish; five were added (*el bosque*, *los animales salvajes*, *la plaza*, *los edificios*, *el transporte público*). **The sorting answers were all added and need a teacher's check** (`VOCABULARY` in `src/data/place.js`).
 - **The quiz** ("Alojamiento y casas") was on ENGAGE's servers. In its place, the same six phrases are sorted into *ventaja* and *problema*. **The answers were added and need a teacher's check.**
 - **Sounds** (crowd, city) are made in code.
 - **Not carried over:** invisible barriers (the walls do that), and the recordings.
@@ -44,12 +58,12 @@ faulys → faults · visitng → visiting · superdesarollo → superdesarrollo 
 
 ### Tested
 
-On a computer screen: all the stages, the first button, the letters with the mouse (right and wrong), the phrases, opening the quiz, and a class session in two browser tabs on one computer (clock, Bring Everyone, avatars). **Not yet tested:** a headset, sound, a class over a real network, and every quiz answer.
+On a computer screen: all the stages, the first button, the letters with the mouse (right and wrong), the phrases, the baskets (right and wrong), the steps of the lesson plan, opening the quiz, and a class session in two browser tabs on one computer (clock, Bring Everyone, avatars). **Not yet tested:** a headset, sound, a class over a real network, and every quiz answer.
 
 ## Where things are
 
 - `lessons/tourism-vr/src/data/effects.js`: the original lesson as data, made by `tools/convert-engage-lesson.mjs`.
-- `lessons/tourism-vr/src/data/place.js`: the areas of the town, the menu's places, the phrases and the pictures.
+- `lessons/tourism-vr/src/data/place.js`: the areas of the town, the menu's places, the phrases, the baskets, the lesson plan and the pictures.
 - `lessons/tourism-vr/src/`: `main.js` (the lesson), `Town.js`, `models.js`, `Walk.js`, `Noise.js`.
 - `shared/`: copied from the WebXR Library (`JPInspired/WebXRProjects`, commit `b67595a`). Changes here: class sessions use their own names, so the two sites never mix; wording on the start screen; and `dragPoint` in `ui/Interaction.js`.
 

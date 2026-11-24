@@ -4,7 +4,7 @@ import { CanvasPanel, THEME } from '../../../shared/ui/CanvasPanel.js';
 import { makeLabel } from '../../../shared/ui/labels.js';
 import { sound } from '../../../shared/util/sound.js';
 import { EFFECTS } from './data/effects.js';
-import { AREAS, START, PLACES, PHRASES, PICTURES } from './data/place.js';
+import { AREAS, LAWNS, START, PLACES, PHRASES, PICTURES, BASKETS, VOCABULARY, PLAN } from './data/place.js';
 import { Town } from './Town.js';
 import { Walk } from './Walk.js';
 import { Noise } from './Noise.js';
@@ -44,13 +44,14 @@ class App extends LessonApp {
 
     this.time = 0; // the lesson's clock, in seconds
     this.fired = new Map(); // trigger id → when it fired
-    this.town = new Town(this.scene, AREAS);
+    this.town = new Town(this.scene, AREAS, LAWNS);
     this.walk = new Walk(this, this.town);
     this.noise = new Noise();
     this.goTo(START.at, START.look, false);
     this.buildMenu();
     this.buildObjects();
     this.buildPhrases();
+    this.buildBaskets();
     this.buildQuiz();
     this.buildRings();
     this.initScreen();
@@ -58,7 +59,7 @@ class App extends LessonApp {
     // (there is no information panel here, so the Teacher menu takes its place on the right)
     this.adminPanel?.mesh.position.set(0.64, 0.1, 0.1);
     if (this.adminPanel) this.adminPanel.mesh.rotation.y = -0.42;
-    this.explain({ title: 'El impacto del turismo', text: 'Find the blue button, Effects of Tourism, and press it. There are four in the town.' });
+    this.explain({ title: 'El impacto del turismo', text: 'Find the blue buttons, Effects of Tourism, and press them. There are four in the city.' });
   }
 
   // ───────────── the lesson's objects ─────────────
@@ -74,14 +75,14 @@ class App extends LessonApp {
       if (e.kind.startsWith('button')) {
         const blue = e.kind === 'button-blue';
         const w = [6, 35].includes(e.id) ? 0.64 : 1; // (those two stand close beside a text)
-        o = sign(e.text, { w: w * e.s, h: w * 0.4 * e.s, bg: blue ? '#2554d8' : '#f4f6fb', ink: blue ? '#ffffff' : '#1b2340', edge: blue ? '#9fb8ff' : '#2554d8', size: 84 });
+        o = sign(e.text, { w: w * e.s, h: w * 0.4 * e.s, bg: blue ? '#1cc3e6' : '#f7f9fb', ink: '#0d1218', edge: blue ? '#7fe3f5' : '#1cc3e6', size: 84, radius: 150 });
         Object.assign(o.userData, { handler: this, effect: e, tapOnly: true });
         this.pressable.push(o);
       } else if (e.kind === 'text') {
         // the boards of the knowledge check are close together; the others stand alone and can be larger
         const check = e.start > 4000 && e.start < 5000 && e.s > 1.1;
         const k = check ? e.s * 0.62 : 0.74 * e.s;
-        o = sign(e.text.replace(/\s+l\s+/, '\n\n'), { w: k, h: check ? k * 0.82 : k, size: 60 });
+        o = sign(e.text.replace(/\s+l\s+/, '\n\n'), { w: k, h: check ? k * 0.82 : k, size: 60, bg: '#f7f8f9', ink: '#111418', edge: '#c9ced6' });
       } else if (e.kind === 'picture') o = this.picture(e);
       else if (e.kind === 'letter') {
         o = letterBlock(e.letter);
@@ -106,10 +107,13 @@ class App extends LessonApp {
         if (MODELS[e.kind] && !FLOATS.has(e.kind)) o.rotation.y = -e.e[1] * THREE.MathUtils.DEG2RAD;
         else if (e.kind === 'letter-trigger') o.rotation.y = -Math.PI / 2; // (a marker over its board)
         else if (e.kind === 'letter') o.rotation.y = 0;
-        else if (e.kind === 'graffiti') o.quaternion.copy(turn([0, 90, 0]));
+        else if (e.kind === 'graffiti') o.rotation.y = Math.PI / 2;
+        else if (e.kind === 'graffiti-tall') o.rotation.y = 0;
         else if (e.kind === 'star') o.rotation.set(0, -Math.PI / 2, 0);
         else o.quaternion.copy(turn(e.e));
-        if (e.kind === 'graffiti') o.position.y = 1.35;
+        // the graffiti of the recording: along the cinema's wall, and along the church's
+        if (e.kind === 'graffiti') o.position.set(-22.64, 1.45, -16.5);
+        if (e.kind === 'graffiti-tall') o.position.set(-10.6, 1.4, -21.74);
         if (e.kind === 'blackboard' || e.kind === 'whiteboard') {
           // straight, and just behind the words on it (the original's leaned a few degrees)
           o.rotation.y = Math.round(o.rotation.y / (Math.PI / 2)) * (Math.PI / 2);
@@ -198,9 +202,8 @@ class App extends LessonApp {
   // ───────────── pressing and picking up ─────────────
 
   describe(o) {
-    const { effect: e, phrase, menu } = o.userData;
-    if (menu) return 'Menu';
-    if (phrase !== undefined) return 'Pick up';
+    const { effect: e, phrase, vocab } = o.userData;
+    if (phrase !== undefined || vocab !== undefined) return 'Pick up';
     return e?.text ?? (e?.letter ? `Letter ${e.letter}` : '');
   }
 
@@ -228,11 +231,12 @@ class App extends LessonApp {
     return {
       move: (p) => {
         o.position.copy(p);
-        if (o.userData.phrase !== undefined) o.lookAt(this.viewCamera().getWorldPosition(new THREE.Vector3()));
+        if (o.userData.phrase !== undefined || o.userData.vocab !== undefined) o.lookAt(this.viewCamera().getWorldPosition(new THREE.Vector3()));
         if (o.userData.effect?.kind === 'letter') this.touch(o);
       },
       release: () => {
         if (o.userData.phrase !== undefined) this.dropPhrase(o);
+        else if (o.userData.vocab !== undefined) this.dropVocab(o);
         else if (o.userData.effect?.kind === 'letter') this.dropLetter(o);
         else if (o === this.ball) this.throwBall(keep);
       },
@@ -345,6 +349,92 @@ class App extends LessonApp {
     c.quaternion.copy(c.userData.turn);
   }
 
+  // ───────────── the baskets: sort the vocabulary ─────────────
+
+  buildBaskets() {
+    this.baskets = BASKETS.map(([id, es, en, c], i) => {
+      const z = -(2.9 + i * 1.75);
+      const b = MODELS.basket();
+      b.scale.setScalar(1.5);
+      b.position.set(30.4, 0.6, z);
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 0.6, 18), new THREE.MeshLambertMaterial({ color: 0x8a6a48 }));
+      stand.position.set(30.4, 0.3, z);
+      const s = sign(`${es}\n${en}`, { w: 1.3, h: 0.5, bg: c, ink: '#ffffff', size: 70 });
+      s.position.set(31, 1.9, z);
+      s.rotation.y = -Math.PI / 2;
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.7, 8), new THREE.MeshLambertMaterial({ color: 0x8a5f3c }));
+      post.position.set(31.05, 0.85, z);
+      this.scene.add(b, stand, s, post);
+      return { id, en, at: new THREE.Vector3(30.4, 1.2, z), n: 0 };
+    });
+    const order = [5, 10, 0, 7, 3, 11, 1, 8, 4, 2, 9, 6]; // (mixed, the same for everyone)
+    this.vocabCards = VOCABULARY.map((v, i) => {
+      const k = order.indexOf(i);
+      const c = sign(v.es, { w: 0.56, h: 0.3, bg: '#fff5dc', ink: '#4a2c14', edge: '#b5553a', size: 66 });
+      const home = new THREE.Vector3(27.6, 0.55 + Math.floor(k / 6) * 0.34, -(3.95 + (k % 6) * 0.63));
+      c.position.copy(home);
+      c.rotation.y = -Math.PI / 2;
+      Object.assign(c.userData, { handler: this, vocab: i, home, turn: c.quaternion.clone() });
+      this.scene.add(c);
+      return c;
+    });
+    // the rack the cards start on
+    const rack = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.72, 3.95), new THREE.MeshLambertMaterial({ color: 0x8a6a48 }));
+    rack.position.set(27.66, 0.72, -5.53);
+    const legs = [-1, 1].map((k) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.4, 0.05), rack.material);
+      m.position.set(27.66, 0.2, -5.53 + k * 1.8);
+      return m;
+    });
+    this.scene.add(rack, ...legs);
+  }
+
+  dropVocab(c) {
+    const v = VOCABULARY[c.userData.vocab];
+    let best = null;
+    let d = 0.75;
+    for (const b of this.baskets) {
+      const k = this.gap(c.position, b.at);
+      if (k < d) { d = k; best = b; }
+    }
+    if (best?.id === v.basket) {
+      c.userData.placed = 1;
+      // the cards stand in a fan in their basket
+      c.position.copy(best.at).add(new THREE.Vector3(-0.1, 0.02 + best.n * 0.14, 0));
+      c.quaternion.copy(c.userData.turn);
+      c.userData.face.color.set(0xc4f5d4);
+      best.n++;
+      const n = this.vocabCards.filter((x) => x.userData.placed).length;
+      if (n < VOCABULARY.length) sound.correct();
+      else this.explain({ title: '¡Excelente!', text: 'Every card is in its basket. Use them to say one positive and one negative impact of tourism.', done: true });
+      return;
+    }
+    if (best) {
+      sound.wrong();
+      this.explain({ title: 'Try Another Basket', text: `Talk about it with your partner: does "${v.es}" really belong in ${best.en}?` });
+    }
+    c.position.copy(c.userData.home);
+    c.quaternion.copy(c.userData.turn);
+  }
+
+  // ───────────── the lesson plan ─────────────
+
+  /** A step of the lesson plan: its card for everyone, its part of the clock, and (for the teacher) its place. */
+  planStep(i) {
+    const [, , , t, place] = PLAN[i];
+    this.plan = i;
+    if (t !== null) this.time = t;
+    const p = PLACES.find(([n]) => n === place);
+    if (p) this.goTo(p[1], p[2]);
+    this.showStep(i);
+    this.broadcastAdmin();
+  }
+
+  showStep(i) {
+    const [, title, text] = PLAN[i];
+    this.explain({ title, text });
+  }
+
   // ───────────── the quiz ─────────────
 
   buildQuiz() {
@@ -416,6 +506,12 @@ class App extends LessonApp {
     ui.text(this.stage, { size: 24, weight: 700, color: THEME.accent });
     if (!this.lockedByAdmin) ui.heading('Take me to', { size: 20 });
     if (!this.lockedByAdmin) ui.buttons(PLACES.map(([name, at, look]) => ({ id: `go-${name}`, label: name, onClick: () => this.goTo(at, look) })), { cols: 2, height: 48, size: 19, gap: 8 });
+    if (!this.presence) {
+      // on your own: the lesson plan, one step at a time (in a class it is in the Teacher menu)
+      const next = ((this.plan ?? -1) + 1) % PLAN.length;
+      ui.heading('Lesson plan', { size: 20 });
+      ui.buttons([{ id: 'plan-next', label: `Next: ${PLAN[next][0]}`, onClick: () => this.planStep(next) }], { height: 48, size: 19 });
+    }
     ui.heading('Settings', { size: 20 });
     ui.buttons([
       { id: 'turn', label: TURNS[this.state.turn][0], onClick: () => { this.state.turn = (this.state.turn + 1) % TURNS.length; } },
@@ -432,7 +528,9 @@ class App extends LessonApp {
       o.position.copy(o.userData.home);
       o.rotation.y = 0;
     }
-    for (const c of this.phraseCards) {
+    for (const b of this.baskets) b.n = 0;
+    this.plan = undefined;
+    for (const c of [...this.phraseCards, ...this.vocabCards]) {
       c.userData.placed = 0;
       c.position.copy(c.userData.home);
       c.quaternion.copy(c.userData.turn);
@@ -465,6 +563,7 @@ class App extends LessonApp {
 
   adminLessonButtons() {
     return [
+      { heading: 'Lesson plan', cols: 2, buttons: PLAN.map(([name], i) => ({ id: `plan-${i}`, label: name, active: this.plan === i, onClick: () => this.planStep(i) })) },
       { heading: 'Part of the lesson', cols: 2, text: 'Moves the lesson for everyone, as the buttons in the town do.', buttons: STAGES.slice(0, 6).map(([t, label]) => ({ id: `stage-${t}`, label, active: this.stage === label, onClick: () => this.jump(t ? t + 1 : 0) })) },
       { heading: 'Bring everyone', cols: 1, buttons: [{ id: 'bring', label: 'Bring Everyone to Me', onClick: () => this.bring() }] },
     ];
@@ -479,7 +578,7 @@ class App extends LessonApp {
   }
 
   adminLessonState() {
-    return { t: +this.time.toFixed(2), call: this.call ?? null };
+    return { t: +this.time.toFixed(2), call: this.call ?? null, plan: this.plan ?? null };
   }
 
   /** Students: the teacher's clock, and being brought to the teacher (checked, as it comes from another device). */
@@ -488,6 +587,10 @@ class App extends LessonApp {
     if (Number.isFinite(l.t) && l.t >= 0 && l.t < 1e6 && Math.abs(l.t - this.time) > 1.5) {
       this.time = l.t;
       this.refresh();
+    }
+    if (Number.isInteger(l.plan) && PLAN[l.plan] && l.plan !== this.plan) {
+      this.plan = l.plan;
+      this.showStep(l.plan);
     }
     const c = l.call;
     if (!this.heardTeacher) {
@@ -784,7 +887,7 @@ class App extends LessonApp {
   grabTargets() {
     if (!this.objects) return [];
     const near = this.viewCamera().getWorldPosition(new THREE.Vector3());
-    return [...this.pressable, ...this.letters, this.ball, ...this.phraseCards.filter((c) => !c.userData.placed)].filter((o) => o && o.visible && o.position.distanceTo(near) < 12);
+    return [...this.pressable, ...this.letters, this.ball, ...this.phraseCards.filter((c) => !c.userData.placed), ...this.vocabCards.filter((c) => !c.userData.placed)].filter((o) => o && o.visible && o.position.distanceTo(near) < 12);
   }
 
   update(dt) {

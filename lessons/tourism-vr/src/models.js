@@ -256,7 +256,7 @@ function vending() {
 }
 
 function plazaFountain() {
-  const p = [C(2.6, 2.6, 0.5, 0, 0.25, 0, '#cfc4ae', 40), C(2.35, 2.35, 0.02, 0, 0.5, 0, '#68aecb', 40), C(0.4, 0.3, 1.5, 0, 0.9, 0, '#cfc4ae', 16), C(0.5, 1.1, 0.25, 0, 1.6, 0, '#d8cdb8', 24), C(0.95, 0.95, 0.02, 0, 1.72, 0, '#68aecb', 24), C(0.16, 0.1, 0.7, 0, 2.0, 0, '#cfc4ae'), S(0.2, 0, 2.4, 0, '#d8cdb8')];
+  const p = [C(2.6, 2.6, 0.5, 0, 0.25, 0, '#cfc4ae', 40), C(2.35, 2.35, 0.02, 0, 0.5, 0, '#68aecb', 40), C(3.4, 3.4, 0.14, 0, 0.07, 0, '#c9ccd0', 40), C(3, 3, 0.28, 0, 0.14, 0, '#d4d7da', 40), C(0.8, 0.6, 1.4, 0, 1.1, 0, '#dfe2e5', 16), C(0.5, 1.4, 0.35, 0, 1.95, 0, '#e6e9eb', 24), C(1.25, 1.25, 0.02, 0, 2.13, 0, '#68aecb', 24), C(0.45, 0.3, 1.2, 0, 2.7, 0, '#dfe2e5', 14), C(0.3, 0.8, 0.25, 0, 3.4, 0, '#e6e9eb', 20), C(0.3, 0.16, 1.1, 0, 4.0, 0, '#dfe2e5', 12), S(0.3, 0, 4.7, 0, '#eef0f2', 0.8, 1.2, 0.8)];
   for (let i = 0; i < 8; i++) {
     const a = (i / 8) * Math.PI * 2;
     const x = Math.cos(a) * 6.4;
@@ -323,9 +323,22 @@ function graffitiPlane(w, h, seed) {
   const r = rng(seed);
   g.lineCap = 'round';
   g.lineJoin = 'round';
-  for (let k = 0; k < 7; k++) {
+  for (let k = 0; k < 9; k++) {
+    // filled, outlined shapes in a row, like tags
+    const x = 30 + k * 52 + r() * 14;
+    const y = c.height * (0.35 + r() * 0.3);
+    g.beginPath();
+    for (let i = 0; i <= 9; i++) g.lineTo(x + Math.cos(i * 0.9 + k) * (24 + r() * 16), y + Math.sin(i * 1.3 + k) * (c.height * (0.16 + r() * 0.14)));
+    g.closePath();
+    g.fillStyle = pick(r, ['#e83f6f', '#2ab7ca', '#f2f2f2', '#6a4c93', '#ffd23f']);
+    g.fill();
+    g.lineWidth = 6;
+    g.strokeStyle = '#16161a';
+    g.stroke();
+  }
+  for (let k = 0; k < 5; k++) {
     g.strokeStyle = pick(r, ['#e83f6f', '#2ab7ca', '#ffd23f', '#6a4c93', '#111111', '#66d17a']);
-    g.lineWidth = 8 + r() * 22;
+    g.lineWidth = 3 + r() * 6;
     g.beginPath();
     const y = (0.2 + r() * 0.6) * c.height;
     const f = 1 + r() * 4;
@@ -339,13 +352,27 @@ function graffitiPlane(w, h, seed) {
 
 // ───────────── words ─────────────
 
+const EDGE = new THREE.MeshLambertMaterial({ color: 0x3a3f55 });
+/** A box whose `sides` (of 0–5) use the second material and the rest the first: two draw calls instead of six. */
+function faceLast(geo, sides) {
+  const ix = [...geo.index.array];
+  const part = (want) => [0, 1, 2, 3, 4, 5].filter((i) => sides.includes(i) === want).flatMap((i) => ix.slice(i * 6, i * 6 + 6));
+  const rest = part(false);
+  const front = part(true);
+  geo.setIndex([...rest, ...front]);
+  geo.clearGroups();
+  geo.addGroup(0, rest.length, 0);
+  geo.addGroup(rest.length, front.length, 1);
+  return geo;
+}
+
 /** A flat sign with words, read from +z (like the original's panels). */
-export function sign(text, { w = 0.9, h = 0.56, bg = '#14182c', ink = '#ffffff', edge = 'rgba(255,255,255,0.35)', size = 60, align = 'center' } = {}) {
+export function sign(text, { w = 0.9, h = 0.56, bg = '#14182c', ink = '#ffffff', edge = 'rgba(255,255,255,0.35)', size = 60, align = 'center', radius = 30 } = {}) {
   const c = document.createElement('canvas');
   c.width = 768;
   c.height = Math.round((768 * h) / w);
   const g = c.getContext('2d');
-  roundRect(g, 3, 3, c.width - 6, c.height - 6, 30);
+  roundRect(g, 3, 3, c.width - 6, c.height - 6, Math.min(radius, c.height / 2 - 4));
   g.fillStyle = bg;
   g.fill();
   g.lineWidth = 6;
@@ -376,8 +403,10 @@ export function sign(text, { w = 0.9, h = 0.56, bg = '#14182c', ink = '#ffffff',
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.02), [0, 1, 2, 3, 4, 5].map((i) => (i === 4 ? new THREE.MeshBasicMaterial({ map: t }) : new THREE.MeshLambertMaterial({ color: 0x3a3f55 }))));
-  m.userData.face = m.material[4];
+  const face = new THREE.MeshBasicMaterial({ map: t, transparent: radius > 40 });
+  // a rounded button is just its face; a panel is a thin board (drawn in two goes: the face, and the rest together)
+  const m = radius > 40 ? new THREE.Mesh(new THREE.PlaneGeometry(w, h), face) : new THREE.Mesh(faceLast(new THREE.BoxGeometry(w, h, 0.02), [4]), [EDGE, face]);
+  m.userData.face = face;
   return m;
 }
 
@@ -401,7 +430,7 @@ export function letterBlock(letter) {
   t.anisotropy = 4;
   const face = new THREE.MeshLambertMaterial({ map: t });
   const side = new THREE.MeshLambertMaterial({ color: 0xb8431f });
-  return new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.1), [side, side, side, side, face, face]);
+  return new THREE.Mesh(faceLast(new THREE.BoxGeometry(0.28, 0.28, 0.1), [4, 5]), [side, face]);
 }
 
 // ───────────── what each kind of object looks like ─────────────
@@ -441,8 +470,8 @@ export const MODELS = {
   pavement: () => mesh([B(14, 0.08, 7, 0, 0.04, 0, '#b7b2a8')]),
   ball: () => new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 3), new THREE.MeshLambertMaterial({ color: 0xd8b45a })),
   star,
-  graffiti: () => graffitiPlane(5, 2.2, 3),
-  'graffiti-tall': () => graffitiPlane(4.2, 3, 9),
+  graffiti: () => graffitiPlane(8, 2.5, 3),
+  'graffiti-tall': () => graffitiPlane(9, 2.5, 9),
 };
 /** Kinds that keep the height they had; everything else stands on the ground. */
 export const FLOATS = new Set(['star', 'ball', 'graffiti', 'graffiti-tall']);
